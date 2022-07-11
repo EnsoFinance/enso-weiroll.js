@@ -195,7 +195,7 @@ function isDynamicType(param?: ParamType): boolean {
 function isFixedType(param?: ParamType): boolean {
   if (typeof param === 'undefined') return false;
 
-  return ['tuple', 'array'].includes(param.baseType) && !isDynamicType(param)
+  return ['tuple', 'array'].includes(param.baseType) && !isDynamicType(param);
 }
 
 function abiEncodeSingle(param: ParamType, value: any): LiteralValue {
@@ -624,10 +624,13 @@ export class Planner {
           commandVisibility.set(arg.command, command);
         } else if (arg instanceof LiteralValue) {
           if (isFixedType(arg.param)) {
-            const objLength = arg.param.baseType === 'tuple' ? arg.param.components.length : arg.param.arrayLength
+            const objLength =
+              arg.param.baseType === 'tuple'
+                ? arg.param.components.length
+                : arg.param.arrayLength;
             for (let i = 0; i < objLength; i++) {
               literalVisibility.set(
-                hexDataSlice(arg.value, 32*i, 32*(i + 1)),
+                hexDataSlice(arg.value, 32 * i, 32 * (i + 1)),
                 command
               );
             }
@@ -680,9 +683,12 @@ export class Planner {
     const args = new Array<number>();
     inargs.forEach((arg) => {
       if (arg instanceof LiteralValue && isFixedType(arg.param)) {
-        const objLength = arg.param.baseType === 'tuple' ? arg.param.components.length : arg.param.arrayLength
+        const objLength =
+          arg.param.baseType === 'tuple'
+            ? arg.param.components.length
+            : arg.param.arrayLength;
         for (let i = 0; i < objLength; i++) {
-          const value = hexDataSlice(arg.value, 32*i, 32*(i + 1));
+          const value = hexDataSlice(arg.value, 32 * i, 32 * (i + 1));
           const slot = literalSlotMap.get(value) as number;
           args.push(slot);
         }

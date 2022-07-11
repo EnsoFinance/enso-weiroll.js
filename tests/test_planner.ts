@@ -80,7 +80,7 @@ describe('Planner', () => {
 
   it('plans a simple program using fixed-size tuple', () => {
     const planner = new Planner();
-    planner.add(Fixed.addStruct({a: 1, b: 2}));
+    planner.add(Fixed.addStruct({ a: 1, b: 2 }));
     const { commands, state } = planner.plan();
 
     expect(commands.length).to.equal(1);

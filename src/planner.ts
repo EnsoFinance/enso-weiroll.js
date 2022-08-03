@@ -1,7 +1,7 @@
 import { ContractInterface } from '@ethersproject/contracts';
 import type { Contract as EthersContract } from '@ethersproject/contracts';
 import { Interface, ParamType, defaultAbiCoder } from '@ethersproject/abi';
-import type { FunctionFragment } from '@ethersproject/abi';
+import { FunctionFragment } from '@ethersproject/abi';
 import { defineReadOnly, getStatic } from '@ethersproject/properties';
 import { hexConcat, hexDataSlice } from '@ethersproject/bytes';
 
@@ -74,10 +74,12 @@ export enum CommandFlags {
   CALL_WITH_VALUE = 0x03,
   /** A bitmask that selects calltype flags */
   CALLTYPE_MASK = 0x03,
-  /** Specifies that this is an extended command, with an additional command word for indices. Internal use only. */
-  EXTENDED_COMMAND = 0x40,
   /** Specifies that the return value of this call should be wrapped in a `bytes`. Internal use only. */
   TUPLE_RETURN = 0x80,
+  /** Specifies that this is an extended command, with an additional command word for indices. Internal use only. */
+  EXTENDED_COMMAND = 0x40,
+  /** Specifies that the fallback function should be called with state overriding msg.data directly. Internal use only. */
+  FALLBACK = 0x20,
 }
 
 /**
@@ -97,6 +99,8 @@ export class FunctionCall {
   readonly args: Value[];
   /** If the call type is a call-with-value, this property holds the value that will be passed. */
   readonly callvalue?: Value;
+  /** True if calling the contract fallback */
+  readonly isFallback?: boolean;
 
   /** @hidden */
   constructor(
@@ -104,13 +108,15 @@ export class FunctionCall {
     flags: CommandFlags,
     fragment: FunctionFragment,
     args: Value[],
-    callvalue?: Value
+    callvalue?: Value,
+    isFallback?: boolean
   ) {
     this.contract = contract;
     this.flags = flags;
     this.fragment = fragment;
     this.args = args;
     this.callvalue = callvalue;
+    this.isFallback = isFallback;
   }
 
   /**
@@ -124,12 +130,17 @@ export class FunctionCall {
     ) {
       throw new Error('Only CALL operations can send value');
     }
+
+    if (!this.fragment.payable)
+      throw new Error('Only payable functions accept value');
+
     return new FunctionCall(
       this.contract,
       (this.flags & ~CommandFlags.CALLTYPE_MASK) | CommandFlags.CALL_WITH_VALUE,
       this.fragment,
       this.args,
-      encodeArg(value, ParamType.from('uint'))
+      encodeArg(value, ParamType.from('uint')),
+      this.isFallback
     );
   }
 
@@ -144,7 +155,8 @@ export class FunctionCall {
       this.flags | CommandFlags.TUPLE_RETURN,
       this.fragment,
       this.args,
-      this.callvalue
+      this.callvalue,
+      this.isFallback
     );
   }
 
@@ -160,7 +172,8 @@ export class FunctionCall {
       (this.flags & ~CommandFlags.CALLTYPE_MASK) | CommandFlags.STATICCALL,
       this.fragment,
       this.args,
-      this.callvalue
+      this.callvalue,
+      this.isFallback
     );
   }
 }
@@ -208,7 +221,7 @@ function abiEncodeSingle(param: ParamType, value: any): LiteralValue {
   return new LiteralValue(param, defaultAbiCoder.encode([param], [value]));
 }
 
-function encodeArg(arg: any, param: ParamType): Value {
+function encodeArg(arg: any, param: ParamType, isFallback?: boolean): Value {
   if (isValue(arg)) {
     if (arg.param.type !== param.type) {
       // Todo: type casting rules
@@ -219,6 +232,8 @@ function encodeArg(arg: any, param: ParamType): Value {
     return arg;
   } else if (arg instanceof Planner) {
     return new SubplanValue(arg);
+  } else if (isFallback) {
+    return new LiteralValue(ParamType.from('bytes'), arg);
   } else {
     return abiEncodeSingle(param, arg);
   }
@@ -226,7 +241,8 @@ function encodeArg(arg: any, param: ParamType): Value {
 
 function buildCall(
   contract: Contract,
-  fragment: FunctionFragment
+  fragment: FunctionFragment,
+  isFallback?: boolean
 ): ContractFunction {
   return function call(...args: Array<any>): FunctionCall {
     if (args.length !== fragment.inputs.length) {
@@ -236,14 +252,16 @@ function buildCall(
     }
 
     const encodedArgs = args.map((arg, idx) =>
-      encodeArg(arg, fragment.inputs[idx])
+      encodeArg(arg, fragment.inputs[idx], isFallback)
     );
 
     return new FunctionCall(
       contract,
       contract.commandflags,
       fragment,
-      encodedArgs
+      encodedArgs,
+      undefined,
+      isFallback
     );
   };
 }
@@ -286,6 +304,15 @@ class BaseContract {
 
     const uniqueNames: { [name: string]: Array<string> } = {};
     const uniqueSignatures: { [signature: string]: boolean } = {};
+    defineReadOnly<any, any>(
+      this,
+      '',
+      buildCall(
+        this,
+        FunctionFragment.from('fallback(bytes) payable returns (bytes)'),
+        true
+      )
+    );
     Object.keys(this.interface.functions).forEach((signature) => {
       const fragment = this.interface.functions[signature];
 
@@ -745,9 +772,9 @@ export class Planner {
         ps.state
       );
 
-      if (args.length > 6) {
-        flags |= CommandFlags.EXTENDED_COMMAND;
-      }
+      if (command.call.isFallback) flags |= CommandFlags.FALLBACK;
+
+      if (args.length > 6) flags |= CommandFlags.EXTENDED_COMMAND;
 
       // Add any newly unused state slots to the list
       ps.freeSlots = ps.freeSlots.concat(

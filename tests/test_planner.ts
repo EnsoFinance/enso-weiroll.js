@@ -512,6 +512,21 @@ describe('Planner', () => {
     );
   });
 
+  it('plans calls to fallback with value', () => {
+    const Test = Contract.createContract(
+      new ethers.Contract(SAMPLE_ADDRESS, ['function deposit(uint x) payable'])
+    );
+
+    const planner = new Planner();
+    planner.add(Test[''](123).withValue(456));
+
+    const { commands } = planner.plan();
+    expect(commands.length).to.equal(1);
+    expect(commands[0]).to.equal(
+      '0x00000000230081ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+    );
+  });
+
   it('allows returns from other calls to be used for the value parameter', () => {
     const Test = Contract.createContract(
       new ethers.Contract(SAMPLE_ADDRESS, ['function deposit(uint x) payable'])

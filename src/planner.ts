@@ -4,9 +4,6 @@ import { Interface, ParamType, defaultAbiCoder } from '@ethersproject/abi';
 import { FunctionFragment } from '@ethersproject/abi';
 import { defineReadOnly, getStatic } from '@ethersproject/properties';
 import { hexConcat, hexDataSlice } from '@ethersproject/bytes';
-import { keccak256, toUtf8Bytes } from 'ethers/lib/utils';
-import { randomBytes } from 'crypto';
-import { BigNumber } from 'ethers';
 
 /**
  * Represents a value that can be passed to a function call.
@@ -340,15 +337,18 @@ class BaseContract {
       }
     });
 
-    let fallbackFunction = 'fallback';
-    while (
+    let fallbackFunction, fallbackFunctionSighash;
+    do {
+      fallbackFunction = fallbackFunction
+        ? fallbackFunction + (Math.random() + 1).toString(36).substring(7)
+        : 'fallback';
+      fallbackFunctionSighash = new Interface([
+        `function ${fallbackFunction}(bytes) payable returns (bytes)`,
+      ]).getSighash(fallbackFunction);
+    } while (
       Object.keys(uniqueNames).includes(fallbackFunction) ||
-      Object.keys(uniqueSignatures).includes(
-        hexDataSlice(keccak256(toUtf8Bytes(fallbackFunction + '()')), 0, 4)
-      )
-    )
-      fallbackFunction =
-        fallbackFunction + BigNumber.from(randomBytes(1)).toString();
+      Object.keys(uniqueSignatures).includes(fallbackFunctionSighash)
+    );
 
     const fallbackCall = buildCall(
       this,

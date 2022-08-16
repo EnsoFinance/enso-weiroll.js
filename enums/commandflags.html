@@ -87,9 +87,9 @@
 								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="commandflags.html#call" class="tsd-kind-icon">CALL</a></li>
 								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="commandflags.html#calltype_mask" class="tsd-kind-icon">CALLTYPE_<wbr>MASK</a></li>
 								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="commandflags.html#call_with_value" class="tsd-kind-icon">CALL_<wbr>WITH_<wbr>VALUE</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="commandflags.html#data" class="tsd-kind-icon">DATA</a></li>
 								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="commandflags.html#delegatecall" class="tsd-kind-icon">DELEGATECALL</a></li>
 								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="commandflags.html#extended_command" class="tsd-kind-icon">EXTENDED_<wbr>COMMAND</a></li>
-								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="commandflags.html#fallback" class="tsd-kind-icon">FALLBACK</a></li>
 								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="commandflags.html#staticcall" class="tsd-kind-icon">STATICCALL</a></li>
 								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="commandflags.html#tuple_return" class="tsd-kind-icon">TUPLE_<wbr>RETURN</a></li>
 							</ul>
@@ -105,7 +105,7 @@
 					<div class="tsd-signature tsd-kind-icon">CALL<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = 1</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/f5d5488/src/planner.ts#L70">planner.ts:70</a></li>
+							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/6e992b5/src/planner.ts#L70">planner.ts:70</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -120,7 +120,7 @@
 					<div class="tsd-signature tsd-kind-icon">CALLTYPE_<wbr>MASK<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = 3</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/f5d5488/src/planner.ts#L76">planner.ts:76</a></li>
+							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/6e992b5/src/planner.ts#L76">planner.ts:76</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -135,7 +135,7 @@
 					<div class="tsd-signature tsd-kind-icon">CALL_<wbr>WITH_<wbr>VALUE<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = 3</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/f5d5488/src/planner.ts#L74">planner.ts:74</a></li>
+							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/6e992b5/src/planner.ts#L74">planner.ts:74</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -145,12 +145,27 @@
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
+					<a name="data" class="tsd-anchor"></a>
+					<h3>DATA</h3>
+					<div class="tsd-signature tsd-kind-icon">DATA<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = 32</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/6e992b5/src/planner.ts#L82">planner.ts:82</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Specifies that the function should be called with state overriding msg.data directly. Internal use only.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
 					<a name="delegatecall" class="tsd-anchor"></a>
 					<h3>DELEGATECALL</h3>
 					<div class="tsd-signature tsd-kind-icon">DELEGATECALL<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = 0</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/f5d5488/src/planner.ts#L68">planner.ts:68</a></li>
+							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/6e992b5/src/planner.ts#L68">planner.ts:68</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -165,7 +180,7 @@
 					<div class="tsd-signature tsd-kind-icon">EXTENDED_<wbr>COMMAND<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = 64</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/f5d5488/src/planner.ts#L80">planner.ts:80</a></li>
+							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/6e992b5/src/planner.ts#L80">planner.ts:80</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -175,27 +190,12 @@
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
-					<a name="fallback" class="tsd-anchor"></a>
-					<h3>FALLBACK</h3>
-					<div class="tsd-signature tsd-kind-icon">FALLBACK<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = 32</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/f5d5488/src/planner.ts#L82">planner.ts:82</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Specifies that the fallback function should be called with state overriding msg.data directly. Internal use only.</p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
 					<a name="staticcall" class="tsd-anchor"></a>
 					<h3>STATICCALL</h3>
 					<div class="tsd-signature tsd-kind-icon">STATICCALL<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = 2</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/f5d5488/src/planner.ts#L72">planner.ts:72</a></li>
+							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/6e992b5/src/planner.ts#L72">planner.ts:72</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -210,7 +210,7 @@
 					<div class="tsd-signature tsd-kind-icon">TUPLE_<wbr>RETURN<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = 128</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/f5d5488/src/planner.ts#L78">planner.ts:78</a></li>
+							<li>Defined in <a href="https://github.com/EnsoFinance/enso-weiroll.js/blob/6e992b5/src/planner.ts#L78">planner.ts:78</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -246,13 +246,13 @@
 								<a href="commandflags.html#call_with_value" class="tsd-kind-icon">CALL_<wbr>WITH_<wbr>VALUE</a>
 							</li>
 							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
+								<a href="commandflags.html#data" class="tsd-kind-icon">DATA</a>
+							</li>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
 								<a href="commandflags.html#delegatecall" class="tsd-kind-icon">DELEGATECALL</a>
 							</li>
 							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
 								<a href="commandflags.html#extended_command" class="tsd-kind-icon">EXTENDED_<wbr>COMMAND</a>
-							</li>
-							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
-								<a href="commandflags.html#fallback" class="tsd-kind-icon">FALLBACK</a>
 							</li>
 							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
 								<a href="commandflags.html#staticcall" class="tsd-kind-icon">STATICCALL</a>

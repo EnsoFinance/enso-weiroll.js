@@ -38,6 +38,12 @@ describe('Contract', () => {
 });
 
 describe('Planner', () => {
+  const fallbackSigHash = hexDataSlice(
+    ethers.utils.keccak256(ethers.utils.toUtf8Bytes('fallback(bytes)')),
+    0,
+    4
+  );
+
   let Math: Contract;
   let Strings: Contract;
   let Fixed: Contract;
@@ -522,9 +528,70 @@ describe('Planner', () => {
 
     const { commands } = planner.plan();
     expect(commands.length).to.equal(1);
-    expect(commands[0]).to.equal(
-      '0x00000000230081ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+    expect(commands[0].slice(10)).to.equal(
+      '230081ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
+    expect(commands[0].slice(0, 10)).to.equal(fallbackSigHash);
+  });
+
+  it('plans calls to fallback with value (avoids naming clash)', () => {
+    const Test = Contract.createContract(
+      new ethers.Contract(SAMPLE_ADDRESS, ['function fallback(uint x) payable'])
+    );
+
+    const planner = new Planner();
+    planner.add(Test[''](123).withValue(456));
+
+    const { commands } = planner.plan();
+    expect(commands.length).to.equal(1);
+    expect(commands[0].slice(10)).to.equal(
+      '230081ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+    );
+    expect(commands[0].slice(0, 10)).to.not.equal(fallbackSigHash);
+  });
+
+  it('allows value to be a call to a function if data flag is set', () => {
+    const Test = Contract.createContract(
+      new ethers.Contract(SAMPLE_ADDRESS, ['function deposit(uint x) payable'])
+    );
+
+    const encodedFunctionCall = Test.interface.encodeFunctionData('deposit', [
+      ethers.utils.parseEther('10'),
+    ]);
+
+    const planner = new Planner();
+    planner.add(Test[''](encodedFunctionCall));
+
+    const { state } = planner.plan();
+    expect(state.length).to.equal(1);
+    expect(state[0].slice(2).length % 32).to.not.equal(
+      0,
+      'length of state value should not be multiple of 32'
+    );
+    expect(state[0]).to.equal(encodedFunctionCall);
+  });
+
+  it('allows returns from fallback call to be used for another fallback call', () => {
+    const Test = Contract.createContract(
+      new ethers.Contract(SAMPLE_ADDRESS, ['function deposit(uint x) payable'])
+    );
+
+    const encodedFunctionCall = Test.interface.encodeFunctionData('deposit', [
+      ethers.utils.parseEther('10'),
+    ]);
+
+    const planner = new Planner();
+    const ret = planner.add(Test[''](encodedFunctionCall));
+    planner.add(Test[''](ret));
+
+    const { commands } = planner.plan();
+    expect(commands.length).to.equal(2);
+    expect(commands).to.deep.equal([
+      fallbackSigHash +
+        '2180ffffffffff80eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+      fallbackSigHash +
+        '2180ffffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+    ]);
   });
 
   it('allows returns from other calls to be used for the value parameter', () => {

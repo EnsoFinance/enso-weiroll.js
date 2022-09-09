@@ -198,7 +198,7 @@ export type ContractFunction = (...args: Array<any>) => FunctionCall;
 
 function isDynamicType(param?: ParamType): boolean {
   if (typeof param === 'undefined') return false;
-  
+
   switch (param.baseType) {
     case 'array':
       // Check if array is fixed or dynamic
@@ -834,7 +834,10 @@ export class Planner {
     state: Array<string>
   ): Array<number> {
     // Build a list of argument value indexes
-    let inargs = command.call.args;
+    const inargs = command.call.args;
+    const args = new Array<number>();
+
+    // Set value first
     if (
       (command.call.flags & CommandFlags.CALLTYPE_MASK) ===
       CommandFlags.CALL_WITH_VALUE
@@ -842,11 +845,11 @@ export class Planner {
       if (!command.call.callvalue) {
         throw new Error('Call with value must have a value parameter');
       }
-      inargs = [command.call.callvalue].concat(inargs);
+      const slots = this.getSlots(command.call.callvalue, returnSlotMap, literalSlotMap, state);
+      args.push(...slots);
     }
 
-    const args = new Array<number>();
-    // Set pointers total in state
+    // Set pointers total
     const pointers = this.getPointers(inargs);
     let slot: number;
     if (pointers > 0) {
@@ -858,6 +861,8 @@ export class Planner {
       slot = 0xfd;
     }
     args.push(slot);
+
+    // Set remaining args
     inargs.forEach((arg) => {
       const slots = this.getSlots(arg, returnSlotMap, literalSlotMap, state);
       args.push(...slots);

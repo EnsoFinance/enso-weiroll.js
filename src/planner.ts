@@ -44,7 +44,7 @@ class TupleValue implements Value {
   readonly param: ParamType;
   readonly values: Value[];
 
-  constructor(param: ParamType, values: any) {
+  constructor(param: ParamType, values: Value[]) {
     this.param = param;
     this.values = values;
   }
@@ -198,6 +198,7 @@ export type ContractFunction = (...args: Array<any>) => FunctionCall;
 
 function isDynamicType(param?: ParamType): boolean {
   if (typeof param === 'undefined') return false;
+  
   switch (param.baseType) {
     case 'array':
       // Check if array is fixed or dynamic
@@ -216,13 +217,7 @@ function isDynamicType(param?: ParamType): boolean {
       return false;
   }
 }
-/*
-function isFixedType(param?: ParamType): boolean {
-  if (typeof param === 'undefined') return false;
 
-  return ['tuple', 'array'].includes(param.baseType) && !isDynamicType(param);
-}
-*/
 function abiEncodeSingle(param: ParamType, value: any): LiteralValue {
   if (isDynamicType(param)) {
     return new LiteralValue(
@@ -899,9 +894,8 @@ export class Planner {
         ps.literalSlotMap,
         ps.state
       );
-      if (args.length > 6) {
-        flags |= CommandFlags.EXTENDED_COMMAND;
-      }
+
+      if (args.length > 6) flags |= CommandFlags.EXTENDED_COMMAND;
 
       // Add any newly unused state slots to the list
       ps.freeSlots = ps.freeSlots.concat(

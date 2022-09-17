@@ -738,15 +738,6 @@ export class Planner {
         inargs = [command.call.callvalue].concat(inargs);
       }
 
-      // Set pointers total in state
-      const pointers = this.getPointers(inargs);
-      if (pointers > 0) {
-        literalVisibility.set(
-          defaultAbiCoder.encode(['uint256'], [pointers]),
-          command
-        );
-      }
-
       for (let arg of inargs) {
         this.setVisibility(
           arg,
@@ -763,19 +754,6 @@ export class Planner {
     return { commandVisibility, literalVisibility };
   }
 
-  private getPointers(args: Value[]): number {
-    let count = 0;
-    for (let arg of args) {
-      if (arg instanceof ArrayValue || arg instanceof TupleValue) {
-        // Tuples can be composed of other tuples or arrays
-        if (isDynamicType(arg.param)) {
-          count++;
-        }
-      }
-    }
-    return count;
-  }
-
   private getSlots(
     arg: Value,
     returnSlotMap: Map<Command, number>,
@@ -784,8 +762,13 @@ export class Planner {
   ): Array<number> {
     const slots = new Array<number>();
     if (arg instanceof ArrayValue || arg instanceof TupleValue) {
+      const dynamicType = isDynamicType(arg.param);
+      if (dynamicType) {
+        // add pointer flag before slots
+        slots.push(0xfd);
+      }
       // Dynamic arrays have a length value
-      if (arg instanceof ArrayValue && isDynamicType(arg.param)) {
+      if (arg instanceof ArrayValue && dynamicType) {
         const slot: number = literalSlotMap.get(
           defaultAbiCoder.encode(['uint256'], [arg.values.length])
         ) as number;
@@ -801,7 +784,7 @@ export class Planner {
         );
         slots.push(...subSlots);
       }
-      if (isDynamicType(arg.param)) {
+      if (dynamicType) {
         // add pointer flag after slots
         slots.push(0xfc);
       }
@@ -834,9 +817,7 @@ export class Planner {
     state: Array<string>
   ): Array<number> {
     // Build a list of argument value indexes
-    const inargs = command.call.args;
-    const args = new Array<number>();
-
+    let inargs = command.call.args;
     // Set value first
     if (
       (command.call.flags & CommandFlags.CALLTYPE_MASK) ===
@@ -845,24 +826,11 @@ export class Planner {
       if (!command.call.callvalue) {
         throw new Error('Call with value must have a value parameter');
       }
-      const slots = this.getSlots(command.call.callvalue, returnSlotMap, literalSlotMap, state);
-      args.push(...slots);
+      inargs = [command.call.callvalue].concat(inargs);
     }
-
-    // Set pointers total
-    const pointers = this.getPointers(inargs);
-    let slot: number;
-    if (pointers > 0) {
-      slot = literalSlotMap.get(
-        defaultAbiCoder.encode(['uint256'], [pointers])
-      ) as number;
-    } else {
-      // If no pointers, add IDX_NO_OFFSET flag
-      slot = 0xfd;
-    }
-    args.push(slot);
 
     // Set remaining args
+    const args = new Array<number>();
     inargs.forEach((arg) => {
       const slots = this.getSlots(arg, returnSlotMap, literalSlotMap, state);
       args.push(...slots);

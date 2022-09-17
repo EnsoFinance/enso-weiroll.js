@@ -76,7 +76,7 @@ describe('Planner', () => {
 
     expect(commands.length).to.equal(1);
     expect(commands[0]).to.equal(
-      '0x771602f700fd0001ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0x771602f7000001ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
 
     expect(state.length).to.equal(2);
@@ -91,7 +91,7 @@ describe('Planner', () => {
 
     expect(commands.length).to.equal(1);
     expect(commands[0]).to.equal(
-      '0x50527d6e00fd0001ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0x50527d6e000001ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
 
     expect(state.length).to.equal(2);
@@ -106,7 +106,7 @@ describe('Planner', () => {
 
     expect(commands.length).to.equal(1);
     expect(commands[0]).to.equal(
-      '0xe953661800fd0001ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0xe9536618000001ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
 
     expect(state.length).to.equal(2);
@@ -130,10 +130,10 @@ describe('Planner', () => {
 
     expect(commands.length).to.equal(2);
     expect(commands[0]).to.equal(
-      '0x771602f700fd0001ffffff01eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0x771602f7000001ffffffff01eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
     expect(commands[1]).to.equal(
-      '0xe953661800fd0102ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0xe9536618000102ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
 
     expect(state.length).to.equal(3);
@@ -150,10 +150,10 @@ describe('Planner', () => {
 
     expect(commands.length).to.equal(2);
     expect(commands[0]).to.equal(
-      '0x771602f700fd0000ffffff01eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0x771602f7000000ffffffff01eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
     expect(commands[1]).to.equal(
-      '0x771602f700fd0001ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0x771602f7000001ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
 
     expect(state.length).to.equal(2);
@@ -168,7 +168,7 @@ describe('Planner', () => {
 
     expect(commands.length).to.equal(1);
     expect(commands[0]).to.equal(
-      '0x367bbd7800fd80ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0x367bbd780080ffffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
 
     expect(state.length).to.equal(1);
@@ -184,7 +184,7 @@ describe('Planner', () => {
 
     expect(commands.length).to.equal(1);
     expect(commands[0]).to.equal(
-      '0xd824ccf300fd8081ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0xd824ccf3008081ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
 
     expect(state.length).to.equal(2);
@@ -204,10 +204,10 @@ describe('Planner', () => {
 
     expect(commands.length).to.equal(2);
     expect(commands[0]).to.equal(
-      '0xd824ccf300fd8081ffffff81eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0xd824ccf3008081ffffffff81eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
     expect(commands[1]).to.equal(
-      '0x367bbd7800fd81ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0x367bbd780081ffffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
 
     expect(state.length).to.equal(2);
@@ -237,7 +237,7 @@ describe('Planner', () => {
 
     expect(commands.length).to.equal(1);
     expect(commands[0]).to.equal(
-      '0x08f389c800fdfefffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0x08f389c800fefffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
 
     expect(state.length).to.equal(0);
@@ -265,7 +265,7 @@ describe('Planner', () => {
 
       const { commands, state } = planner.plan();
       expect(commands).to.deep.equal([
-        '0xde792d5f00fd82fefffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        '0xde792d5f0082fefffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
       ]);
 
       expect(state.length).to.equal(3);
@@ -279,7 +279,7 @@ describe('Planner', () => {
         ])
       )[0];
       expect(subcommands).to.deep.equal([
-        '0x771602f700fd0001ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        '0x771602f7000001ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
       ]);
     });
 
@@ -294,9 +294,9 @@ describe('Planner', () => {
       const { commands } = planner.plan();
       expect(commands).to.deep.equal([
         // Invoke subplanner
-        '0xde792d5f00fd83fefffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        '0xde792d5f0083fefffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         // sum + 3
-        '0x771602f700fd0102ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        '0x771602f7000102ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
       ]);
     });
 
@@ -318,9 +318,9 @@ describe('Planner', () => {
       const { commands, state } = planner.plan();
       expect(commands).to.deep.equal([
         // Invoke subplanner1
-        '0xde792d5f00fd83fefffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        '0xde792d5f0083fefffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         // Invoke subplanner2
-        '0xde792d5f00fd84fefffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        '0xde792d5f0084fefffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
       ]);
 
       expect(state.length).to.equal(5);
@@ -333,7 +333,7 @@ describe('Planner', () => {
       )[0];
       expect(subcommands2).to.deep.equal([
         // sum + 3
-        '0x771602f700fd0102ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        '0x771602f7000102ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
       ]);
     });
 
@@ -437,7 +437,7 @@ describe('Planner', () => {
 
       const { commands } = planner.plan();
       expect(commands).to.deep.equal([
-        '0xde792d5f00fd82feffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        '0xde792d5f0082feffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
       ]);
     });
 
@@ -468,7 +468,7 @@ describe('Planner', () => {
 
     expect(commands.length).to.equal(1);
     expect(commands[0]).to.equal(
-      '0x771602f701fd0001ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0x771602f7010001ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
   });
 
@@ -484,7 +484,7 @@ describe('Planner', () => {
 
     expect(commands.length).to.equal(1);
     expect(commands[0]).to.equal(
-      '0x771602f702fd0001ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0x771602f7020001ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
   });
 
@@ -499,7 +499,7 @@ describe('Planner', () => {
 
     expect(commands.length).to.equal(1);
     expect(commands[0]).to.equal(
-      '0x771602f702fd0001ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0x771602f7020001ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
   });
 
@@ -514,7 +514,7 @@ describe('Planner', () => {
     const { commands } = planner.plan();
     expect(commands.length).to.equal(1);
     expect(commands[0]).to.equal(
-      '0xb6b55f250300fd01ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '0xb6b55f25030001ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
   });
 
@@ -529,7 +529,7 @@ describe('Planner', () => {
     const { commands } = planner.plan();
     expect(commands.length).to.equal(1);
     expect(commands[0].slice(10)).to.equal(
-      '2300fd81ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '230081ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
     expect(commands[0].slice(0, 10)).to.equal(fallbackSigHash);
   });
@@ -545,7 +545,7 @@ describe('Planner', () => {
     const { commands } = planner.plan();
     expect(commands.length).to.equal(1);
     expect(commands[0].slice(10)).to.equal(
-      '2300fd81ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      '230081ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
     expect(commands[0].slice(0, 10)).to.not.equal(fallbackSigHash);
   });
@@ -588,9 +588,9 @@ describe('Planner', () => {
     expect(commands.length).to.equal(2);
     expect(commands).to.deep.equal([
       fallbackSigHash +
-        '21fd80ffffffff80eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        '2180ffffffffff80eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
       fallbackSigHash +
-        '21fd80ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        '2180ffffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
     ]);
   });
 
@@ -606,8 +606,8 @@ describe('Planner', () => {
     const { commands } = planner.plan();
     expect(commands.length).to.equal(2);
     expect(commands).to.deep.equal([
-      '0x771602f700fd0001ffffff01eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-      '0xb6b55f250301fd02ffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+      '0x771602f7000001ffffffff01eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+      '0xb6b55f25030102ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
     ]);
   });
 
@@ -646,7 +646,7 @@ describe('Planner', () => {
       '0xe473580d40000000000000ffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
     );
     expect(commands[1]).to.equal(
-      '0xfd00010203040506ffffffffffffffffffffffffffffffffffffffffffffffff'
+      '0x00010203040506ffffffffffffffffffffffffffffffffffffffffffffffffff'
     );
   });
 
@@ -663,8 +663,8 @@ describe('Planner', () => {
     planner.add(Test.acceptsBytes(ret));
     const { commands } = planner.plan();
     expect(commands).to.deep.equal([
-      '0x61a7e05e80fdffffffffff00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-      '0x3e9ef66a00fd80ffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+      '0x61a7e05e80ffffffffffff00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+      '0x3e9ef66a0080ffffffffffffeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
     ]);
   });
 });

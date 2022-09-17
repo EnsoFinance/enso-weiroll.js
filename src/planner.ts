@@ -103,6 +103,20 @@ export enum CommandFlags {
 }
 
 /**
+ * IdxFlags
+ * @description Flags that identify special idx types
+ * @enum {number}
+ */
+export enum IdxFlags {
+  IDX_VARIABLE_LENGTH = 0x80,
+  IDX_VALUE_MASK = 0x7f,
+  IDX_END_OF_ARGS = 0xff,
+  IDX_USE_STATE = 0xfe,
+  IDX_DYNAMIC_START = 0xfd,
+  IDX_DYNAMIC_END = 0xfc,
+}
+
+/**
  * Represents a call to a contract function as part of a Weiroll plan.
  *
  * A `FunctionCall` is created by calling functions on a [[Contract]] object, and consumed by
@@ -765,7 +779,7 @@ export class Planner {
       const dynamicType = isDynamicType(arg.param);
       if (dynamicType) {
         // add pointer flag before slots
-        slots.push(0xfd);
+        slots.push(IdxFlags.IDX_DYNAMIC_START);
       }
       // Dynamic arrays have a length value
       if (arg instanceof ArrayValue && dynamicType) {
@@ -786,7 +800,7 @@ export class Planner {
       }
       if (dynamicType) {
         // add pointer flag after slots
-        slots.push(0xfc);
+        slots.push(IdxFlags.IDX_DYNAMIC_END);
       }
     } else {
       let slot: number;
@@ -795,7 +809,7 @@ export class Planner {
       } else if (arg instanceof LiteralValue) {
         slot = literalSlotMap.get(arg.value) as number;
       } else if (arg instanceof StateValue) {
-        slot = 0xfe;
+        slot = IdxFlags.IDX_USE_STATE;
       } else if (arg instanceof SubplanValue) {
         // buildCommands has already built the subplan and put it in the last state slot
         slot = state.length - 1;
@@ -803,7 +817,7 @@ export class Planner {
         throw new Error(`Unknown function argument type '${typeof arg}'`);
       }
       if (isDynamicType(arg.param)) {
-        slot |= 0x80;
+        slot |= IdxFlags.IDX_VARIABLE_LENGTH;
       }
       slots.push(slot);
     }
@@ -876,7 +890,7 @@ export class Planner {
       );
 
       // Figure out where to put the return value
-      let ret = 0xff;
+      let ret = IdxFlags.IDX_END_OF_ARGS;
       if (ps.commandVisibility.has(command)) {
         if (
           command.type === CommandType.RAWCALL ||
@@ -907,7 +921,7 @@ export class Planner {
         }
 
         if (isDynamicType(command.call.fragment.outputs?.[0])) {
-          ret |= 0x80;
+          ret |= IdxFlags.IDX_VARIABLE_LENGTH;
         }
       } else if (
         command.type === CommandType.RAWCALL ||
@@ -917,7 +931,7 @@ export class Planner {
           command.call.fragment.outputs &&
           command.call.fragment.outputs.length === 1
         ) {
-          ret = 0xfe;
+          ret = IdxFlags.IDX_USE_STATE;
         }
       }
 
@@ -933,14 +947,16 @@ export class Planner {
             command.call.contract.address,
           ])
         );
-        encodedCommands.push(hexConcat([padArray(args, 32, 0xff)]));
+        encodedCommands.push(
+          hexConcat([padArray(args, 32, IdxFlags.IDX_END_OF_ARGS)])
+        );
       } else {
         // Standard command
         encodedCommands.push(
           hexConcat([
             command.call.contract.interface.getSighash(command.call.fragment),
             [flags],
-            padArray(args, 6, 0xff),
+            padArray(args, 6, IdxFlags.IDX_END_OF_ARGS),
             [ret],
             command.call.contract.address,
           ])

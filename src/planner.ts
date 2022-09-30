@@ -232,6 +232,24 @@ function isDynamicType(param?: ParamType): boolean {
   }
 }
 
+function containsReturnValue(arg: any, param: ParamType) {
+  if (isValue(arg)) {
+    return true;
+  } else if (param.baseType === 'array') {
+    for (let i = 0; i < arg.length; i++) {
+      if (containsReturnValue(arg[i], param.arrayChildren)) return true;
+    }
+  } else if (param.baseType === 'tuple') {
+    for (let i = 0; i < param.components.length; i++) {
+      if (
+        containsReturnValue(arg[param.components[i].name], param.components[i])
+      )
+        return true;
+    }
+  }
+  return false;
+}
+
 function abiEncodeSingle(param: ParamType, value: any): LiteralValue {
   if (isDynamicType(param)) {
     return new LiteralValue(
@@ -256,19 +274,31 @@ function encodeArg(arg: any, param: ParamType, dataFlag?: boolean): Value {
   } else if (dataFlag) {
     return new LiteralValue(ParamType.from('bytes'), arg);
   } else if (param.baseType === 'array') {
-    const values: Value[] = [];
-    for (let i = 0; i < arg.length; i++) {
-      values.push(encodeArg(arg[i], param.arrayChildren));
+    if (!isDynamicType(param) || containsReturnValue(arg, param)) {
+      // If an array contains ReturnValues or its a static type, we encode the underlying args and return an ArrayValue
+      const values: Value[] = [];
+      for (let i = 0; i < arg.length; i++) {
+        values.push(encodeArg(arg[i], param.arrayChildren));
+      }
+      return new ArrayValue(param, values);
+    } else {
+      // If an array is dynamic and has no return values, we just treat it as a literal value to reduce complexity
+      return abiEncodeSingle(param, arg);
     }
-    return new ArrayValue(param, values);
   } else if (param.baseType === 'tuple') {
-    const values: Value[] = [];
-    for (let i = 0; i < param.components.length; i++) {
-      values.push(
-        encodeArg(arg[param.components[i].name], param.components[i])
-      );
+    if (!isDynamicType(param) || containsReturnValue(arg, param)) {
+      // If a tuple contains ReturnValues or its a static type, we encode the underlying args and return a TupleValue
+      const values: Value[] = [];
+      for (let i = 0; i < param.components.length; i++) {
+        values.push(
+          encodeArg(arg[param.components[i].name], param.components[i])
+        );
+      }
+      return new TupleValue(param, values);
+    } else {
+      // If a tuple is dynamic and has no return values, we just treat it as a literal value to reduce complexity
+      return abiEncodeSingle(param, arg);
     }
-    return new TupleValue(param, values);
   } else {
     return abiEncodeSingle(param, arg);
   }

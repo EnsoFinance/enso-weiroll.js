@@ -1,6 +1,6 @@
 {
   "name": "@ensofinance/weiroll.js",
-  "version": "0.4.0-alpha",
+  "version": "0.4.0-alpha.0",
   "description": "The weiroll planner in JS",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",

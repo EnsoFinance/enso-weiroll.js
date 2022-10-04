@@ -30,6 +30,26 @@ class LiteralValue implements Value {
   }
 }
 
+class ArrayValue implements Value {
+  readonly param: ParamType;
+  readonly values: Value[];
+
+  constructor(param: ParamType, values: Value[]) {
+    this.param = param;
+    this.values = values;
+  }
+}
+
+class TupleValue implements Value {
+  readonly param: ParamType;
+  readonly values: Value[];
+
+  constructor(param: ParamType, values: Value[]) {
+    this.param = param;
+    this.values = values;
+  }
+}
+
 class ReturnValue implements Value {
   readonly param: ParamType;
   readonly command: Command; // Function call we want the return value of
@@ -74,12 +94,26 @@ export enum CommandFlags {
   CALL_WITH_VALUE = 0x03,
   /** A bitmask that selects calltype flags */
   CALLTYPE_MASK = 0x03,
-  /** Specifies that the return value of this call should be wrapped in a `bytes`. Internal use only. */
-  TUPLE_RETURN = 0x80,
-  /** Specifies that this is an extended command, with an additional command word for indices. Internal use only. */
-  EXTENDED_COMMAND = 0x40,
   /** Specifies that the function should be called with state overriding msg.data directly. Internal use only. */
   DATA = 0x20,
+  /** Specifies that this is an extended command, with an additional command word for indices. Internal use only. */
+  EXTENDED_COMMAND = 0x40,
+  /** Specifies that the return value of this call should be wrapped in a `bytes`. Internal use only. */
+  TUPLE_RETURN = 0x80,
+}
+
+/**
+ * IdxFlags
+ * @description Flags that identify special idx types
+ * @enum {number}
+ */
+export enum IdxFlags {
+  IDX_VARIABLE_LENGTH = 0x80,
+  IDX_VALUE_MASK = 0x7f,
+  IDX_END_OF_ARGS = 0xff,
+  IDX_USE_STATE = 0xfe,
+  IDX_DYNAMIC_START = 0xfd,
+  IDX_DYNAMIC_END = 0xfc,
 }
 
 /**
@@ -198,10 +232,22 @@ function isDynamicType(param?: ParamType): boolean {
   }
 }
 
-function isFixedType(param?: ParamType): boolean {
-  if (typeof param === 'undefined') return false;
-
-  return ['tuple', 'array'].includes(param.baseType) && !isDynamicType(param);
+function containsReturnValue(arg: any, param: ParamType) {
+  if (isValue(arg)) {
+    return true;
+  } else if (param.baseType === 'array') {
+    for (let i = 0; i < arg.length; i++) {
+      if (containsReturnValue(arg[i], param.arrayChildren)) return true;
+    }
+  } else if (param.baseType === 'tuple') {
+    for (let i = 0; i < param.components.length; i++) {
+      if (
+        containsReturnValue(arg[param.components[i].name], param.components[i])
+      )
+        return true;
+    }
+  }
+  return false;
 }
 
 function abiEncodeSingle(param: ParamType, value: any): LiteralValue {
@@ -227,6 +273,32 @@ function encodeArg(arg: any, param: ParamType, dataFlag?: boolean): Value {
     return new SubplanValue(arg);
   } else if (dataFlag) {
     return new LiteralValue(ParamType.from('bytes'), arg);
+  } else if (param.baseType === 'array') {
+    if (!isDynamicType(param) || containsReturnValue(arg, param)) {
+      // If an array contains ReturnValues or its a static type, we encode the underlying args and return an ArrayValue
+      const values: Value[] = [];
+      for (let i = 0; i < arg.length; i++) {
+        values.push(encodeArg(arg[i], param.arrayChildren));
+      }
+      return new ArrayValue(param, values);
+    } else {
+      // If an array is dynamic and has no return values, we just treat it as a literal value to reduce complexity
+      return abiEncodeSingle(param, arg);
+    }
+  } else if (param.baseType === 'tuple') {
+    if (!isDynamicType(param) || containsReturnValue(arg, param)) {
+      // If a tuple contains ReturnValues or its a static type, we encode the underlying args and return a TupleValue
+      const values: Value[] = [];
+      for (let i = 0; i < param.components.length; i++) {
+        values.push(
+          encodeArg(arg[param.components[i].name], param.components[i])
+        );
+      }
+      return new TupleValue(param, values);
+    } else {
+      // If a tuple is dynamic and has no return values, we just treat it as a literal value to reduce complexity
+      return abiEncodeSingle(param, arg);
+    }
   } else {
     return abiEncodeSingle(param, arg);
   }
@@ -625,6 +697,60 @@ export class Planner {
     this.commands.push(new Command(call, CommandType.RAWCALL));
   }
 
+  private setVisibility(
+    arg: Value,
+    command: Command,
+    commandVisibility: Map<Command, Command>,
+    literalVisibility: Map<string, Command>,
+    seen: Set<Command>,
+    planners: Set<Planner>
+  ) {
+    if (arg instanceof ReturnValue) {
+      if (!seen.has(arg.command)) {
+        throw new Error(
+          `Return value from "${arg.command.call.fragment.name}" is not visible here`
+        );
+      }
+      commandVisibility.set(arg.command, command);
+    } else if (arg instanceof LiteralValue) {
+      literalVisibility.set(arg.value, command);
+    } else if (arg instanceof ArrayValue || arg instanceof TupleValue) {
+      if (arg instanceof ArrayValue && isDynamicType(arg.param)) {
+        literalVisibility.set(
+          defaultAbiCoder.encode(['uint256'], [arg.values.length]),
+          command
+        );
+      }
+      for (let i = 0; i < arg.values.length; i++) {
+        this.setVisibility(
+          arg.values[i],
+          command,
+          commandVisibility,
+          literalVisibility,
+          seen,
+          planners
+        );
+      }
+    } else if (arg instanceof SubplanValue) {
+      let subplanSeen = seen;
+      if (
+        !command.call.fragment.outputs ||
+        command.call.fragment.outputs.length === 0
+      ) {
+        // Read-only subplan; return values aren't visible externally
+        subplanSeen = new Set<Command>(seen);
+      }
+      arg.planner.preplan(
+        commandVisibility,
+        literalVisibility,
+        subplanSeen,
+        planners
+      );
+    } else if (!(arg instanceof StateValue)) {
+      throw new Error(`Unknown function argument type '${typeof arg}'`);
+    }
+  }
+
   private preplan(
     commandVisibility: Map<Command, Command>,
     literalVisibility: Map<string, Command>,
@@ -657,51 +783,75 @@ export class Planner {
       }
 
       for (let arg of inargs) {
-        if (arg instanceof ReturnValue) {
-          if (!seen.has(arg.command)) {
-            throw new Error(
-              `Return value from "${arg.command.call.fragment.name}" is not visible here`
-            );
-          }
-          commandVisibility.set(arg.command, command);
-        } else if (arg instanceof LiteralValue) {
-          if (isFixedType(arg.param)) {
-            const objLength =
-              arg.param.baseType === 'tuple'
-                ? arg.param.components.length
-                : arg.param.arrayLength;
-            for (let i = 0; i < objLength; i++) {
-              literalVisibility.set(
-                hexDataSlice(arg.value, 32 * i, 32 * (i + 1)),
-                command
-              );
-            }
-          } else {
-            literalVisibility.set(arg.value, command);
-          }
-        } else if (arg instanceof SubplanValue) {
-          let subplanSeen = seen;
-          if (
-            !command.call.fragment.outputs ||
-            command.call.fragment.outputs.length === 0
-          ) {
-            // Read-only subplan; return values aren't visible externally
-            subplanSeen = new Set<Command>(seen);
-          }
-          arg.planner.preplan(
-            commandVisibility,
-            literalVisibility,
-            subplanSeen,
-            planners
-          );
-        } else if (!(arg instanceof StateValue)) {
-          throw new Error(`Unknown function argument type '${typeof arg}'`);
-        }
+        this.setVisibility(
+          arg,
+          command,
+          commandVisibility,
+          literalVisibility,
+          seen,
+          planners
+        );
       }
       seen.add(command);
     }
 
     return { commandVisibility, literalVisibility };
+  }
+
+  private getSlots(
+    arg: Value,
+    returnSlotMap: Map<Command, number>,
+    literalSlotMap: Map<string, number>,
+    state: Array<string>
+  ): Array<number> {
+    const slots = new Array<number>();
+    if (arg instanceof ArrayValue || arg instanceof TupleValue) {
+      const dynamicType = isDynamicType(arg.param);
+      if (dynamicType) {
+        // add pointer flag before slots
+        slots.push(IdxFlags.IDX_DYNAMIC_START);
+      }
+      // Dynamic arrays have a length value
+      if (arg instanceof ArrayValue && dynamicType) {
+        const slot: number = literalSlotMap.get(
+          defaultAbiCoder.encode(['uint256'], [arg.values.length])
+        ) as number;
+        slots.push(slot);
+      }
+      // Tuples/arrays can be composed of other tuples or arrays
+      for (let i = 0; i < arg.values.length; i++) {
+        const subSlots = this.getSlots(
+          arg.values[i],
+          returnSlotMap,
+          literalSlotMap,
+          state
+        );
+        slots.push(...subSlots);
+      }
+      if (dynamicType) {
+        // add pointer flag after slots
+        slots.push(IdxFlags.IDX_DYNAMIC_END);
+      }
+    } else {
+      let slot: number;
+      if (arg instanceof ReturnValue) {
+        slot = returnSlotMap.get(arg.command) as number;
+      } else if (arg instanceof LiteralValue) {
+        slot = literalSlotMap.get(arg.value) as number;
+      } else if (arg instanceof StateValue) {
+        slot = IdxFlags.IDX_USE_STATE;
+      } else if (arg instanceof SubplanValue) {
+        // buildCommands has already built the subplan and put it in the last state slot
+        slot = state.length - 1;
+      } else {
+        throw new Error(`Unknown function argument type '${typeof arg}'`);
+      }
+      if (isDynamicType(arg.param)) {
+        slot |= IdxFlags.IDX_VARIABLE_LENGTH;
+      }
+      slots.push(slot);
+    }
+    return slots;
   }
 
   private buildCommandArgs(
@@ -712,6 +862,7 @@ export class Planner {
   ): Array<number> {
     // Build a list of argument value indexes
     let inargs = command.call.args;
+    // Set value first
     if (
       (command.call.flags & CommandFlags.CALLTYPE_MASK) ===
       CommandFlags.CALL_WITH_VALUE
@@ -722,37 +873,11 @@ export class Planner {
       inargs = [command.call.callvalue].concat(inargs);
     }
 
+    // Set remaining args
     const args = new Array<number>();
     inargs.forEach((arg) => {
-      if (arg instanceof LiteralValue && isFixedType(arg.param)) {
-        const objLength =
-          arg.param.baseType === 'tuple'
-            ? arg.param.components.length
-            : arg.param.arrayLength;
-        for (let i = 0; i < objLength; i++) {
-          const value = hexDataSlice(arg.value, 32 * i, 32 * (i + 1));
-          const slot = literalSlotMap.get(value) as number;
-          args.push(slot);
-        }
-      } else {
-        let slot: number;
-        if (arg instanceof ReturnValue) {
-          slot = returnSlotMap.get(arg.command) as number;
-        } else if (arg instanceof LiteralValue) {
-          slot = literalSlotMap.get(arg.value) as number;
-        } else if (arg instanceof StateValue) {
-          slot = 0xfe;
-        } else if (arg instanceof SubplanValue) {
-          // buildCommands has already built the subplan and put it in the last state slot
-          slot = state.length - 1;
-        } else {
-          throw new Error(`Unknown function argument type '${typeof arg}'`);
-        }
-        if (isDynamicType(arg.param)) {
-          slot |= 0x80;
-        }
-        args.push(slot);
-      }
+      const slots = this.getSlots(arg, returnSlotMap, literalSlotMap, state);
+      args.push(...slots);
     });
     return args;
   }
@@ -795,7 +920,7 @@ export class Planner {
       );
 
       // Figure out where to put the return value
-      let ret = 0xff;
+      let ret = IdxFlags.IDX_END_OF_ARGS;
       if (ps.commandVisibility.has(command)) {
         if (
           command.type === CommandType.RAWCALL ||
@@ -826,7 +951,7 @@ export class Planner {
         }
 
         if (isDynamicType(command.call.fragment.outputs?.[0])) {
-          ret |= 0x80;
+          ret |= IdxFlags.IDX_VARIABLE_LENGTH;
         }
       } else if (
         command.type === CommandType.RAWCALL ||
@@ -836,7 +961,7 @@ export class Planner {
           command.call.fragment.outputs &&
           command.call.fragment.outputs.length === 1
         ) {
-          ret = 0xfe;
+          ret = IdxFlags.IDX_USE_STATE;
         }
       }
 
@@ -852,14 +977,16 @@ export class Planner {
             command.call.contract.address,
           ])
         );
-        encodedCommands.push(hexConcat([padArray(args, 32, 0xff)]));
+        encodedCommands.push(
+          hexConcat([padArray(args, 32, IdxFlags.IDX_END_OF_ARGS)])
+        );
       } else {
         // Standard command
         encodedCommands.push(
           hexConcat([
             command.call.contract.interface.getSighash(command.call.fragment),
             [flags],
-            padArray(args, 6, 0xff),
+            padArray(args, 6, IdxFlags.IDX_END_OF_ARGS),
             [ret],
             command.call.contract.address,
           ])

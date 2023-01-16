@@ -112,8 +112,9 @@ export enum IdxFlags {
   IDX_VALUE_MASK = 0x7f,
   IDX_END_OF_ARGS = 0xff,
   IDX_USE_STATE = 0xfe,
-  IDX_DYNAMIC_START = 0xfd,
-  IDX_DYNAMIC_END = 0xfc,
+  IDX_ARRAY_START = 0xfd,
+  IDX_TUPLE_START = 0xfc,
+  IDX_DYNAMIC_END = 0xfb,
 }
 
 /**
@@ -807,12 +808,13 @@ export class Planner {
     const slots = new Array<number>();
     if (arg instanceof ArrayValue || arg instanceof TupleValue) {
       const dynamicType = isDynamicType(arg.param);
-      if (dynamicType) {
+      if (arg instanceof TupleValue && dynamicType) {
         // add pointer flag before slots
-        slots.push(IdxFlags.IDX_DYNAMIC_START);
-      }
-      // Dynamic arrays have a length value
-      if (arg instanceof ArrayValue && dynamicType) {
+        slots.push(IdxFlags.IDX_TUPLE_START);
+      } else if (arg instanceof ArrayValue && dynamicType) {
+        // add pointer flag before slots
+        slots.push(IdxFlags.IDX_ARRAY_START);
+        // add array length
         const slot: number = literalSlotMap.get(
           defaultAbiCoder.encode(['uint256'], [arg.values.length])
         ) as number;
